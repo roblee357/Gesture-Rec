@@ -107,28 +107,6 @@ def upload_file():
             # Detect('Fortnite_Emotes',source = YT_watchID)
             return redirect(url_for('video_feed'))
 
-        # # check if the post request has the file part
-        # if 'file' not in request.files:
-        #     flash('No file part')
-        #     return redirect(request.url)
-        # file = request.files['file']
-        # # If the user does not select a file, the browser submits an
-        # # empty file without a filename.
-        # if file.filename == '':
-        #     flash('No selected file')
-        #     return redirect(request.url)
-
-        # if file and allowed_file(file.filename):
-        #     filename = secure_filename(file.filename)
-        #     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        #     options = {'side':'right', 'save_vid':True}
-        #     vid_processor = Vid_Stream(vids,'Fortnite_Emotes', options=options)
-        #     # vid_processor.extract(vids, options=options)
-        #     # vid_processor.train_model()
-
-        #     Detect('Fortnite_Emotes',source = 'qZEElv92rLM')
-        #     return redirect(url_for('download_file'))
-
     return  upload_form
 
 
