@@ -50,6 +50,27 @@ detector = Detect()
 # application.add_url_rule('/', 'index', (lambda: header_text +
 #     say_hello() + instructions + footer_text))
 
+@app.route('/large.csv')
+def generate_large_csv():
+    def generate():
+        for row in iter_all_rows():
+            yield f"{','.join(row)}\n"
+    return app.response_class(generate(), mimetype='text/csv')
+
+def stream_template(template_name, **context):
+    app.update_template_context(context)
+    t = app.jinja_env.get_template(template_name)
+    rv = t.stream(context)
+    rv.enable_buffering(5)
+    return rv
+
+@app.route('/my-large-page.html')
+def render_large_template():
+    rows = iter_all_rows()
+    return app.response_class(stream_template('the_template.html', rows=rows))
+
+
+
 @app.route('/newclip', methods=['GET'])
 def newclip():
    cID  = request.args.get('cID', None)
@@ -65,7 +86,7 @@ def newclip():
 #    video.detect()
    return json.dumps({'success':True, 'input':mstring}), 200, {'ContentType':'application/json'}
 
-def gen():
+def gen_frames():
     while True:
         image_path = os.path.join(os.getcwd(),'live.jpeg')
         # image = cv2.imread(image_path)
@@ -83,31 +104,58 @@ def gen():
             yield (  upload_form + b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + img_str_bytes + b'\r\n')
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(stream_with_context(gen()),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+camera = cv2.VideoCapture(0)
 
-@app.route('/stop', methods=['GET', 'POST'])
-def stop_detector():
-    if request.method == 'POST':
-        # detector.stop_threads = True
-        detector.newStartupThread.raise_exception()
-        print('raising exception')
-    return redirect(url_for('upload_file'))
+# def gen_frames():  
+#     while True:
+#         success, frame = camera.read()  # read the camera frame
+#         if not success:
+#             break
+#         else:
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             frame = buffer.tobytes()
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
 @app.route('/', methods=['GET', 'POST'])
-def upload_file():
+def index():
     if request.method == 'POST':
         if  len(request.form['YouTube URL']) > 10 :
             YT_URL =request.form['YouTube URL']
             YT_watchID = YT_URL.split('v=')[1]
             detector.start(YT_watchID)
+    return render_template('controls_and_stream.html')
 
-            # Detect('Fortnite_Emotes',source = YT_watchID)
-            return redirect(url_for('video_feed'))
 
-    return  upload_form
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# @app.route('/video_feed')
+# def video_feed():
+#     return Response(stream_with_context(gen()),
+#                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# @app.route('/stop', methods=['GET', 'POST'])
+# def stop_detector():
+#     if request.method == 'POST':
+#         # detector.stop_threads = True
+#         detector.newStartupThread.raise_exception()
+#         print('raising exception')
+#     return redirect(url_for('upload_file'))
+
+# @app.route('/', methods=['GET', 'POST'])
+# def upload_file():
+#     if request.method == 'POST':
+#         if  len(request.form['YouTube URL']) > 10 :
+#             YT_URL =request.form['YouTube URL']
+#             YT_watchID = YT_URL.split('v=')[1]
+#             detector.start(YT_watchID)
+
+#             # Detect('Fortnite_Emotes',source = YT_watchID)
+#             return redirect(url_for('video_feed'))
+
+#     return  upload_form
 
 
 @app.route('/files')
