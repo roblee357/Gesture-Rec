@@ -117,10 +117,17 @@ camera = cv2.VideoCapture(0)
 #             yield (b'--frame\r\n'
 #                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
+### https://stackoverflow.com/questions/55736527/how-can-i-yield-a-template-over-another-in-flask/55755716
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         if  len(request.form['YouTube URL']) > 10 :
+            
+            YT_URL =request.form['YouTube URL']
+            YT_watchID = YT_URL.split('v=')[1]
+            print('starting detection on: ' + YT_watchID) 
+            detector.start(YT_watchID)
+        if  len(request.form['Stop Video']) > 10 :
             YT_URL =request.form['YouTube URL']
             YT_watchID = YT_URL.split('v=')[1]
             detector.start(YT_watchID)
