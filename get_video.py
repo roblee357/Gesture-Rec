@@ -221,108 +221,111 @@ class Detect():
             source = play.url
         cap = cv2.VideoCapture(source)
         # Initiate holistic model
-        with open(model_name + '_body_language.pkl', 'rb') as f:
-            model = pickle.load(f)
-        self.mp_drawing = mp.solutions.drawing_utils # Drawing helpers
-        self.mp_holistic = mp.solutions.holistic # Mediapipe Solutions
-        frame_num = 0
-        frame_list = []
-        with self.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
-            
-            while cap.isOpened():
-                if self.stop_threads:
-                    break
-                # print(self.stop_threads)
-                frame_num = frame_num + 1
-                ret, frame = cap.read()
+        try:
+            with open(model_name + '_body_language.pkl', 'rb') as f:
+                model = pickle.load(f)
+            self.mp_drawing = mp.solutions.drawing_utils # Drawing helpers
+            self.mp_holistic = mp.solutions.holistic # Mediapipe Solutions
+            frame_num = 0
+            frame_list = []
+            with self.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
                 
-                # Recolor Feed
-                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image.flags.writeable = False        
-                
-                # Make Detections
-                results = holistic.process(image)
-                # print(results.face_landmarks)
-                
-                # face_landmarks, pose_landmarks, left_hand_landmarks, right_hand_landmarks
-                
-                # Recolor image back to BGR for rendering
-                image.flags.writeable = True   
-                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)                
-
-                # 4. Pose Detections
-                self.mp_drawing.draw_landmarks(image, results.pose_landmarks, self.mp_holistic.POSE_CONNECTIONS, 
-                                        self.mp_drawing.DrawingSpec(color=(245,117,66), thickness=2, circle_radius=4),
-                                        self.mp_drawing.DrawingSpec(color=(245,66,230), thickness=2, circle_radius=2)
-                                        )
-                # Export coordinates
-                try:
-                    # Extract Pose landmarks
-                    pose = results.pose_landmarks.landmark
-                    pose_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in pose]).flatten())
-                    # remove face landmarks
-                    del pose_row[3:43]    
+                while cap.isOpened():
+                    if self.stop_threads:
+                        break
+                    # print(self.stop_threads)
+                    frame_num = frame_num + 1
+                    ret, frame = cap.read()
                     
-                    # Concate rows
-                    row = pose_row  #+face_row
-                    frame_list.insert(0,row)
-                    # print('len(frame_list)',len(frame_list))      
-
-                    if frame_num >= max(trail_frames):
-                        for frame_no in trail_frames:
-                            try:
-                                row = row + frame_list[frame_no]
-                            except Exception as e:
-                                traceback.print_tb(e.__traceback__)
-                                # print('frame_no',frame_no,e)                               
-
-                        # Make Detections
-                        X = pd.DataFrame([row])
-                        # print('model.n_features_',model.n_features_,'len(row)',len(row))
-                        body_language_class = model.predict(X)[0]
-                        body_language_prob = model.predict_proba(X)[0]
-                        # print('model.predict_proba(X)', model.predict_proba(X))
-                        # print('model.predict(X)',model.predict(X))
-                        
-                        # Grab ear coords
-                        coords = tuple(np.multiply(
-                                        np.array(
-                                            (results.pose_landmarks.landmark[self.mp_holistic.PoseLandmark.LEFT_EAR].x, 
-                                            results.pose_landmarks.landmark[self.mp_holistic.PoseLandmark.LEFT_EAR].y))
-                                    , [640,480]).astype(int))
-                        
-                        cv2.rectangle(image, 
-                                    (coords[0], coords[1]+5), 
-                                    (coords[0]+len(body_language_class)*20, coords[1]-30), 
-                                    (245, 117, 16), -1)
-                        cv2.putText(image, body_language_class, coords, 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                        
-                        # Get status box
-                        cv2.rectangle(image, (0,0), (250, 60), (245, 117, 16), -1)
-                        
-                        # Display Class
-                        cv2.putText(image, 'CLASS'
-                                    , (95,12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
-                        cv2.putText(image, body_language_class.split(' ')[0]
-                                    , (90,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                        # print('body_language_class.split(' ')[0]',body_language_class.split(' ')[0])
-                        # Display Probability
-                        cv2.putText(image, 'PROB'
-                                    , (15,12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
-                        cv2.putText(image, str(round(body_language_prob[np.argmax(body_language_prob)],2))
-                                    , (10,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    # Recolor Feed
+                    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    image.flags.writeable = False        
                     
-                except Exception as e:
-                    traceback.print_tb(e.__traceback__)
-                    print('exception and ',e)
-                    # pass
-                self.image = image                
-                # cv2.imshow(self.model_name + ' Raw Webcam Feed', image)
-                # cv2.imwrite('live.jpeg',image)
+                    # Make Detections
+                    results = holistic.process(image)
+                    # print(results.face_landmarks)
+                    
+                    # face_landmarks, pose_landmarks, left_hand_landmarks, right_hand_landmarks
+                    
+                    # Recolor image back to BGR for rendering
+                    image.flags.writeable = True   
+                    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)                
 
-                # if cv2.waitKey(10) & 0xFF == ord('q'):
-                #     break
+                    # 4. Pose Detections
+                    self.mp_drawing.draw_landmarks(image, results.pose_landmarks, self.mp_holistic.POSE_CONNECTIONS, 
+                                            self.mp_drawing.DrawingSpec(color=(245,117,66), thickness=2, circle_radius=4),
+                                            self.mp_drawing.DrawingSpec(color=(245,66,230), thickness=2, circle_radius=2)
+                                            )
+                    # Export coordinates
+                    try:
+                        # Extract Pose landmarks
+                        pose = results.pose_landmarks.landmark
+                        pose_row = list(np.array([[landmark.x, landmark.y, landmark.z, landmark.visibility] for landmark in pose]).flatten())
+                        # remove face landmarks
+                        del pose_row[3:43]    
+                        
+                        # Concate rows
+                        row = pose_row  #+face_row
+                        frame_list.insert(0,row)
+                        # print('len(frame_list)',len(frame_list))      
+
+                        if frame_num >= max(trail_frames):
+                            for frame_no in trail_frames:
+                                try:
+                                    row = row + frame_list[frame_no]
+                                except Exception as e:
+                                    traceback.print_tb(e.__traceback__)
+                                    # print('frame_no',frame_no,e)                               
+
+                            # Make Detections
+                            X = pd.DataFrame([row])
+                            # print('model.n_features_',model.n_features_,'len(row)',len(row))
+                            body_language_class = model.predict(X)[0]
+                            body_language_prob = model.predict_proba(X)[0]
+                            # print('model.predict_proba(X)', model.predict_proba(X))
+                            # print('model.predict(X)',model.predict(X))
+                            
+                            # Grab ear coords
+                            coords = tuple(np.multiply(
+                                            np.array(
+                                                (results.pose_landmarks.landmark[self.mp_holistic.PoseLandmark.LEFT_EAR].x, 
+                                                results.pose_landmarks.landmark[self.mp_holistic.PoseLandmark.LEFT_EAR].y))
+                                        , [640,480]).astype(int))
+                            
+                            cv2.rectangle(image, 
+                                        (coords[0], coords[1]+5), 
+                                        (coords[0]+len(body_language_class)*20, coords[1]-30), 
+                                        (245, 117, 16), -1)
+                            cv2.putText(image, body_language_class, coords, 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                            
+                            # Get status box
+                            cv2.rectangle(image, (0,0), (250, 60), (245, 117, 16), -1)
+                            
+                            # Display Class
+                            cv2.putText(image, 'CLASS'
+                                        , (95,12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+                            cv2.putText(image, body_language_class.split(' ')[0]
+                                        , (90,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                            # print('body_language_class.split(' ')[0]',body_language_class.split(' ')[0])
+                            # Display Probability
+                            cv2.putText(image, 'PROB'
+                                        , (15,12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+                            cv2.putText(image, str(round(body_language_prob[np.argmax(body_language_prob)],2))
+                                        , (10,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                        
+                    except Exception as e:
+                        traceback.print_tb(e.__traceback__)
+                        print('exception and ',e)
+                        # pass
+                    self.image = image                
+                    # cv2.imshow(self.model_name + ' Raw Webcam Feed', image)
+                    # cv2.imwrite('live.jpeg',image)
+
+                    # if cv2.waitKey(10) & 0xFF == ord('q'):
+                    #     break
+        except:
+            print('passing the error like a kidney stone')
 
         cap.release()
         cv2.destroyAllWindows()
@@ -343,7 +346,7 @@ class Detect():
 # options = {'side':'right', 'save_vid':True}
 # vid_processor = Vid_Stream(vids,'Fortnite_Emotes', options=options)
 # vid_processor.train_model()
-
+# detector = Detect()
 # Detect('Fortnite_Emotes',source = 'qZEElv92rLM')
 
 # with open('Fortnite_Emotes' + '_body_language.pkl', 'rb') as f:

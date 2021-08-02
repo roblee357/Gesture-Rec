@@ -25,15 +25,16 @@ instructions = '''
     <p><em>Gesture Recognition</em>:</p>'''
 home_link = '<p><a href="/">Back</a></p>\n'
 footer_text = '</body>\n</html>'
-upload_form =     b'''
-    <!doctype html>
-    <title>Gesture recognition</title>
-    <h1>Upload YouTube URL for Fortnite dance gesture recognition</h1>
-    <form method="POST">
-        <input name="YouTube URL">
-        <input type="submit">
-    </form>
-    '''
+upload_form =  b''
+#    b'''
+#     <!doctype html>
+#     <title>Gesture recognition</title>
+#     <h1>Upload YouTube URL for Fortnite dance gesture recognition</h1>
+#     <form method="POST">
+#         <input name="YouTube URL">
+#         <input type="submit">
+#     </form>
+#     '''
     # <form method=post enctype=multipart/form-data>
     #   <input type=file name=file>
     #   <input type=submit value=Upload>
@@ -46,45 +47,7 @@ application = app = Flask(__name__)
 api = Api(app)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 detector = Detect()
-# # add a rule for the index page.
-# application.add_url_rule('/', 'index', (lambda: header_text +
-#     say_hello() + instructions + footer_text))
 
-@app.route('/large.csv')
-def generate_large_csv():
-    def generate():
-        for row in iter_all_rows():
-            yield f"{','.join(row)}\n"
-    return app.response_class(generate(), mimetype='text/csv')
-
-def stream_template(template_name, **context):
-    app.update_template_context(context)
-    t = app.jinja_env.get_template(template_name)
-    rv = t.stream(context)
-    rv.enable_buffering(5)
-    return rv
-
-@app.route('/my-large-page.html')
-def render_large_template():
-    rows = iter_all_rows()
-    return app.response_class(stream_template('the_template.html', rows=rows))
-
-
-
-@app.route('/newclip', methods=['GET'])
-def newclip():
-   cID  = request.args.get('cID', None)
-   title  = request.args.get('title', None)
-   cstart  = request.args.get('cstart', None)
-   cend  = request.args.get('cend', None)
-   print('cID',cID,'title',title,'cstart',cstart,'cend',cend)
-   mstring =  {'cID':  cID , 'title' : title , 'cstart' : cstart, 'cend': cend}
-   with open('output.txt','a+') as fout:
-       fout.write(json.dumps(mstring))
-       fout.write('\n')
-#    video = get_video.vid(cID,title,cstart,cend)
-#    video.detect()
-   return json.dumps({'success':True, 'input':mstring}), 200, {'ContentType':'application/json'}
 
 def gen_frames():
     while True:
@@ -125,66 +88,18 @@ def index():
             
             YT_URL =request.form['YouTube URL']
             YT_watchID = YT_URL.split('v=')[1]
-            print('starting detection on: ' + YT_watchID) 
+            print('starting detection onn: ' + YT_watchID) 
             detector.start(YT_watchID)
-        if  len(request.form['Stop Video']) > 10 :
-            YT_URL =request.form['YouTube URL']
-            YT_watchID = YT_URL.split('v=')[1]
-            detector.start(YT_watchID)
+        # if  len(request.form['Stop Video']) > 10 :
+        #     YT_URL =request.form['YouTube URL']
+        #     YT_watchID = YT_URL.split('v=')[1]
+        #     detector.start(YT_watchID)
     return render_template('controls_and_stream.html')
 
 
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# @app.route('/video_feed')
-# def video_feed():
-#     return Response(stream_with_context(gen()),
-#                     mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# @app.route('/stop', methods=['GET', 'POST'])
-# def stop_detector():
-#     if request.method == 'POST':
-#         # detector.stop_threads = True
-#         detector.newStartupThread.raise_exception()
-#         print('raising exception')
-#     return redirect(url_for('upload_file'))
-
-# @app.route('/', methods=['GET', 'POST'])
-# def upload_file():
-#     if request.method == 'POST':
-#         if  len(request.form['YouTube URL']) > 10 :
-#             YT_URL =request.form['YouTube URL']
-#             YT_watchID = YT_URL.split('v=')[1]
-#             detector.start(YT_watchID)
-
-#             # Detect('Fortnite_Emotes',source = YT_watchID)
-#             return redirect(url_for('video_feed'))
-
-#     return  upload_form
-
-
-@app.route('/files')
-def dir_listing():
-    files = os.listdir(os.getcwd())
-    return render_template('files.html', files=files)
-
-@app.route('/download')
-def download_file():
-    files = os.listdir(os.path.join(os.getcwd(),'static/uploads'))
-    return render_template('files.html', files=files)    
-
-
-@app.route('/', defaults={'req_path': ''})
-@app.route('/<path:req_path>')
-def dir_listing2(req_path):
-    BASE_DIR = os.getcwd()
-    abs_path = os.path.join(BASE_DIR, req_path)
-    if os.path.isfile(abs_path):
-        return send_file(abs_path)
-    else:
-        return abs_path
 
 
 # run the app.
