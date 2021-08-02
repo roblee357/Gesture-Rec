@@ -1,3 +1,16 @@
+<script>
+$(document).ready(function () {
+    resetForms();
+});
+
+function resetForms() {
+    document.forms['myForm'].reset();
+}
+
+</script>
+
+
+
 <style>
     body {
         {#font-family: Georgia, "Times New Roman",#}
@@ -41,15 +54,15 @@
     <title>Gesture recognition</title>
 {#    <link rel="stylesheet" href="templates/style.css">#}
     <div class = "image">
-        <img src = "https://flic.kr/p/2meEuPx">
+        <img src="https://flic.kr/p/2meEuPx">
     </div>
     <h1>How well can you dance?</h1>
     <p> Input your youtube link, and then receive your dance score.</p>
     <div class="form-inline">
-    <form method="POST">
+    <form method="POST" name="myForm">
         <input name="YouTube URL">
         <input type="submit">
-        <!-- <button name="Stop Video" type="submit" value="Stop">Stop</button> -->
+        <button name="Stop Video" type="submit" value="Stop">Stop</button>
     </form>
     </div>
 </div>
@@ -64,8 +77,8 @@
         </div>
     </div>
 
-    <form method="POST"">
+    <!-- <form method="POST"">
         <button name="Stop Video" type="submit" value="Stop">Stop</button>
-        </form>
+        </form> -->
 
 </body>

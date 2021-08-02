@@ -9,14 +9,9 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif','mp4'}
 
 from get_video import *
 
-# print a nice greeting.
-def say_hello(username = "World"):
-    return '<p>Hello %s!</p>\n' % username
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 # some bits of text for the page.
 header_text = '''
@@ -25,20 +20,7 @@ instructions = '''
     <p><em>Gesture Recognition</em>:</p>'''
 home_link = '<p><a href="/">Back</a></p>\n'
 footer_text = '</body>\n</html>'
-upload_form =  b''
-#    b'''
-#     <!doctype html>
-#     <title>Gesture recognition</title>
-#     <h1>Upload YouTube URL for Fortnite dance gesture recognition</h1>
-#     <form method="POST">
-#         <input name="YouTube URL">
-#         <input type="submit">
-#     </form>
-#     '''
-    # <form method=post enctype=multipart/form-data>
-    #   <input type=file name=file>
-    #   <input type=submit value=Upload>
-    # </form>
+
 
 jumping_jack = cv2.imread('jumping_jack.jpg')
 img_str_bytes = cv2.imencode('.jpg', jumping_jack)[1].tobytes()
@@ -57,38 +39,26 @@ def gen_frames():
         try:
             try:
                 img_str = cv2.imencode('.jpg', image)[1].tobytes()
-                yield (  upload_form + b'--frame\r\n'
+                yield (  b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + img_str + b'\r\n')
                 last_img_str = img_str
             except:
-                yield (  upload_form + b'--frame\r\n'
+                yield (  b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + last_img_str + b'\r\n')            
         except:
-            yield (  upload_form + b'--frame\r\n'
+            yield (  b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + img_str_bytes + b'\r\n')
-
-camera = cv2.VideoCapture(0)
-
-# def gen_frames():  
-#     while True:
-#         success, frame = camera.read()  # read the camera frame
-#         if not success:
-#             break
-#         else:
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             frame = buffer.tobytes()
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
 ### https://stackoverflow.com/questions/55736527/how-can-i-yield-a-template-over-another-in-flask/55755716
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        print('request data',request.data)
         if  len(request.form['YouTube URL']) > 10 :
             
             YT_URL =request.form['YouTube URL']
             YT_watchID = YT_URL.split('v=')[1]
-            print('starting detection onn: ' + YT_watchID) 
+            print('starting detection on: ' + YT_watchID) 
             detector.start(YT_watchID)
         # if  len(request.form['Stop Video']) > 10 :
         #     YT_URL =request.form['YouTube URL']
